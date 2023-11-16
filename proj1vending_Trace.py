@@ -45,6 +45,36 @@ def log(s):
     if TESTING:
         print(s)
 
+#quantities
+QTomatoSoup = 3
+QRaspberryStew = 1
+QLemonJuice = 6
+QCanOpener = 1
+QSaladDressing = 2
+
+def add_coins(Amount, total):
+    if Amount == 200:
+        print ("\nToonie Added")
+        total += 200
+        print(total)
+    elif Amount == 100:
+        print("\nLoonie Added")
+        total += 100
+        print(total)
+    elif Amount == 25:
+        print("\nQuarter Added")
+        total += 25
+        print(total)
+    elif Amount == 10:
+        print("\nDime Added")
+        total += 10
+        print(total)
+    elif Amount == 5:
+        print("\nNickel Added")
+        total += 5
+        print(total)
+    return total
+    
 
 # The vending state machine class holds the states and any information
 # that "belongs to" the state machine. In this case, the information
@@ -52,12 +82,12 @@ def log(s):
 # For testing purposes, output is to stdout, also ensure use of Docstring, in class
 class VendingMachine(object):
     
-    PRODUCTS = {("Tomato Soup   $2", 200),  # Using an integer as the key
-                ("Raspberry Stew   $2.50", 250), 
-                ("Lemon Juice   25\u00A2", 25),
-                ("Can Opener   $1", 100),
-                ("Salad Dressing   5\u00A2", 5),
-                }
+    PRODUCTS = ["Tomato Soup   $2", 200,  # Using an integer as the key
+                "Raspberry Stew   $2.50", 250, 
+                "Lemon Juice   25\u00A2", 25,
+                "Can Opener   $1", 100,
+                "Salad Dressing   5\u00A2", 5
+                ]
 
     # List of coins: each tuple is ("VALUE", value in cents)
     COINS = [ ("$2", 200),  
@@ -65,7 +95,6 @@ class VendingMachine(object):
               ("25\u00A2", 25),
               ("10\u00A2", 10),
               ("5\u00A2", 5),
-              ("RETURN", "Return")
             ]
 
 
@@ -74,14 +103,7 @@ class VendingMachine(object):
         self.states = {}  # dictionary of states
         self.event = ""  # no event detected
         self.amount = 0  # amount from coins inserted so far
-        self.change_due = 0  # change due after vending
-        # Build a list of coins in descending order of value
-        values = []
-        for k in self.COINS:
-            values.append(self.COINS[k][1])
-        self.coin_values = sorted(values, reverse=True)
-        log(str(self.coin_values))
-
+        
     def add_state(self, state):
         self.states[state.name] = state
 
@@ -105,7 +127,7 @@ class VendingMachine(object):
 
 # Parent class for the derived state classes
 # It does nothing. The derived classes are where the work is done.
-# However this is needed. In formal terms, this is an "abstract" class.
+# However this is needed. In fomachine.eventrmal terms, this is an "abstract" class.
 class State(object):
     """Superclass for states. Override the methods as required."""
     _NAME = ""
@@ -127,25 +149,88 @@ class WaitingState(State):
     _NAME = "waiting"
     def update(self, machine):
         if machine.event == 5:
-            machine.total = coin_added(machine.event, machine.total)
+            machine.total = add_coins(machine.event, machine.total)
         elif machine.event == 10:
-            machine.total = coin_added(machine.event, machine.total)
+            machine.total = add_coins(machine.event, machine.total)
         elif machine.event == 25:
-            machine.total = coin_added(machine.event, machine.total)
+            machine.total = add_coins(machine.event, machine.total)
         elif machine.event == 100:
-            machine.total = coin_added(machine.event, machine.total)
+            machine.total = add_coins(machine.event, machine.total)
         elif machine.event == 200:
-            machine.total = coin_added(machine.event, machine.total)
-        if machine.event == "CHIPS   $1.00" or machine.event == "CHOCOLATE   $2.50" or machine.event == "HEINEKEN   $0.05" or machine.event == "POP   $2.25" or machine.event == "JUICE   $1.25":
+            machine.total = add_coins(machine.event, machine.total)
+        elif machine.event == "Tomato Soup   $2":
             machine.go_to_state ("item")
-        if machine.event == 'Return':
+        elif machine.event == "Raspberry Stew   $2.50":
+            machine.go_to_state ("item")
+        elif machine.event == "Lemon Juice   25\u00A2":
+            machine.go_to_state ("item")
+        elif machine.event == "Can Opener   $1":
+            machine.go_to_state ("item")
+        elif machine.event == "Salad Dressing   5\u00A2":
+            machine.go_to_state ("item")
+        elif machine.event == 'Return':
             machine.go_to_state ('cancel')
-
-
-# Print the product being delivered
-class DeliverProductState(State):
+#checks availability of stock
+def StorageCheck(Selection, total):
+    global QTomatoSoup, QRaspberryStew, QLemonJuice, QCanOpener, QSaladDressing
+    
+    if Selection == "Tomato Soup   $2":
+        if QTomatoSoup <= 0:
+            print ("\n OUT OF STOCK\n")
+            return "NoStock"
+        if total >= 200 and QTomatoSoup > 0:
+            QTomatoSoup -= 1
+            total -= 200
+        return total
+    
+    elif Selection == "Raspberry Stew   $2.50":
+        if QRaspberryStew <= 0:
+            print ("\n OUT OF STOCK\n")
+            return "NoStock"
+        if total >= 250 and QRaspberryStew > 0:
+            QRaspberryStew -= 1
+            total -= 250
+        return total
+        
+    elif Selection == "Lemon Juice   25\u00A2":
+        if QLemonJuice <= 0:
+            print ("\n OUT OF STOCK\n")
+            return "NoStock"
+        if total >= 25 and QLemonJuice > 0:
+            QLemonJuice -= 1
+            total -= 25
+        return total
+        
+    elif Selection == "Can Opener   $1":
+        if Pop_Amount <= 0:
+            print ("\n OUT OF STOCK\n")
+            return "NoStock"     
+        if total >= 225 and Pop_Amount > 0:
+            Pop_Amount -= 1
+            total -= 225
+        return total
+        
+    elif Selection == "JUICE   $1.25":
+        if Juice_Amount <= 0:
+            print ("\n OUT OF STOCK\n")
+            return "NoStock"  
+        if total >= 125 and Juice_Amount > 0:
+            Juice_Amount -= 1
+            total -= 125
+        return total
+    
+    
+    
+# finish check and direct next steps
+class ItemState(State):
     _NAME = "deliver_product"
     def on_entry(self, machine):
+        StockStatus = StorageCheck(machine.event, machine.total)
+        if machine.total == "NoStock":
+            machine.go_to_state('waiting')
+        if machine.total != Snack and isinstance(Snack, int):
+            machine.total = Snack
+            machine.go_to_state ("delivery")  
         # Deliver the product and change state
         machine.change_due = machine.amount - machine.PRODUCTS[machine.event][1]
         machine.amount = 0
@@ -153,7 +238,19 @@ class DeliverProductState(State):
         if machine.change_due > 0:
             machine.go_to_state('count_change')
         else:
-            machine.go_to_state('waiting')
+            print(Snack)
+            print("\nInsufficient Funds", machine.total, "\u00A2")
+            machine.go_to_state ("waiting")
+
+# Deliver Items
+class DeliveryState(State):
+    _NAME = "dispensing"
+    def on_entry(self, machine):    
+        print("Item Delivered!")
+        time.sleep(0.2)
+        print("Balance is: ", total)
+        time.sleep(0.4)
+        machine.go_to_state ("waiting")
 
 
 # MAIN PROGRAM
@@ -189,9 +286,8 @@ if __name__ == "__main__":
 
     # Add the states
     vending.add_state(WaitingState())
-    vending.add_state(DeliverProductState())
-    vending.add_state(CountChangeState())
-
+    vending.add_state(ItemState())
+    vending.add_state(DeliveryState())
     # Reset state is "waiting for coins"
     vending.go_to_state('waiting')
 
@@ -210,6 +306,7 @@ if __name__ == "__main__":
         event, values = window.read(timeout=10)
         if event != '__TIMEOUT__':
             log((event, values))
+            pass
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
         vending.event = event
