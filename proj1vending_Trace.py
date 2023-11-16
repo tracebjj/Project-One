@@ -18,7 +18,7 @@
 # https://pysimplegui.readthedocs.io/en/latest/cookbook/#asynchronous-window-with-periodic-update
 
 import PySimpleGUI as sg
-
+from time import sleep
 
 # Hardware interface module
 # Button basic recipe: *** define the pin you used
@@ -26,18 +26,21 @@ import PySimpleGUI as sg
 # Button on GPIO channel, BCM numbering, same name as Pi400 IO pin
 
 #Where am I?
-hardware_present = False
+hardware_present = True
 try:
     #Used pin 26
-    from gpiozero import Button
-    key1 = Button(26)
+    from gpiozero import Button, Servo
+    button = Button(5)
+    servo = Servo(12)
     hardware_present = True
 except ModuleNotFoundError:
     print("Not on a Raspberry Pi or gpiozero not installed.")
 
+
+
 # Setting this constant to True enables the logging function
 # Set it to False for normal operation
-TESTING = True
+TESTING = False
 
 # Print a debug log string if TESTING is True, ensure use of Docstring, in definition
 def log(s):
@@ -75,6 +78,13 @@ def add_coins(Amount, total):
         print(total)
     return total
     
+def serv_op():
+    servo.min()
+    sleep(0.1)
+    servo.max()
+    sleep(0.1)
+    servo.mid()
+    sleep(0.2)
 
 # The vending state machine class holds the states and any information
 # that "belongs to" the state machine. In this case, the information
@@ -82,11 +92,11 @@ def add_coins(Amount, total):
 # For testing purposes, output is to stdout, also ensure use of Docstring, in class
 class VendingMachine(object):
     
-    PRODUCTS = ["Tomato Soup   $2", 200,  # Using an integer as the key
-                "Raspberry Stew   $2.50", 250, 
-                "Lemon Juice   25\u00A2", 25,
-                "Can Opener   $1", 100,
-                "Salad Dressing   5\u00A2", 5
+    PRODUCTS = [("Tomato Soup   $2", 200),  # Using an integer as the key
+                ("Raspberry Stew   $2.50", 250), 
+                ("Lemon Juice   25\u00A2", 25),
+                ("Can Opener   $1", 100),
+                ("Salad Dressing   5\u00A2", 5)
                 ]
 
     # List of coins: each tuple is ("VALUE", value in cents)
@@ -137,7 +147,7 @@ class State(object):
     def name(self):
         return self._NAME
     def on_entry(self, machine):
-        print("Vending Machine/n")
+        print("Vending Machine\n")
         pass
     def on_exit(self, machine):
         pass
@@ -148,33 +158,19 @@ class State(object):
 class WaitingState(State):
     _NAME = "waiting"
     def update(self, machine):
-        if machine.event == 5:
+        if machine.event in (5, 10, 25, 100, 200):
             machine.total = add_coins(machine.event, machine.total)
-        elif machine.event == 10:
-            machine.total = add_coins(machine.event, machine.total)
-        elif machine.event == 25:
-            machine.total = add_coins(machine.event, machine.total)
-        elif machine.event == 100:
-            machine.total = add_coins(machine.event, machine.total)
-        elif machine.event == 200:
-            machine.total = add_coins(machine.event, machine.total)
-        elif machine.event == "Tomato Soup   $2":
-            machine.go_to_state ("item")
-        elif machine.event == "Raspberry Stew   $2.50":
-            machine.go_to_state ("item")
-        elif machine.event == "Lemon Juice   25\u00A2":
-            machine.go_to_state ("item")
-        elif machine.event == "Can Opener   $1":
-            machine.go_to_state ("item")
-        elif machine.event == "Salad Dressing   5\u00A2":
-            machine.go_to_state ("item")
-        elif machine.event == 'Return':
-            machine.go_to_state ('cancel')
+            print(machine.total)
+        elif machine.event in ("Tomato Soup   $2", "Raspberry Stew   $2.50", "Lemon Juice   25\u00A2", "Can Opener   $1", "Salad Dressing   5\u00A2"):
+            machine.go_to_state("item")
+        elif machine.event == 'RETURN':
+            machine.go_to_state('return')
+
 #checks availability of stock
-def StorageCheck(Selection, total):
+def StorageCheck(Event, total):
     global QTomatoSoup, QRaspberryStew, QLemonJuice, QCanOpener, QSaladDressing
     
-    if Selection == "Tomato Soup   $2":
+    if machine.event == "Tomato Soup   $2":
         if QTomatoSoup <= 0:
             print ("\n OUT OF STOCK\n")
             return "NoStock"
@@ -183,7 +179,7 @@ def StorageCheck(Selection, total):
             total -= 200
         return total
     
-    elif Selection == "Raspberry Stew   $2.50":
+    elif machine.event == "Raspberry Stew   $2.50":
         if QRaspberryStew <= 0:
             print ("\n OUT OF STOCK\n")
             return "NoStock"
@@ -192,7 +188,7 @@ def StorageCheck(Selection, total):
             total -= 250
         return total
         
-    elif Selection == "Lemon Juice   25\u00A2":
+    elif machine.event == "Lemon Juice   25\u00A2":
         if QLemonJuice <= 0:
             print ("\n OUT OF STOCK\n")
             return "NoStock"
@@ -201,58 +197,54 @@ def StorageCheck(Selection, total):
             total -= 25
         return total
         
-    elif Selection == "Can Opener   $1":
-        if Pop_Amount <= 0:
+    elif machine.event == "Can Opener   $1":
+        if QCanOpener <= 0:
             print ("\n OUT OF STOCK\n")
             return "NoStock"     
-        if total >= 225 and Pop_Amount > 0:
-            Pop_Amount -= 1
-            total -= 225
+        if total >= 100 and QCanOpener > 0:
+            QCanOpener -= 1
+            total -= 100
         return total
         
-    elif Selection == "JUICE   $1.25":
-        if Juice_Amount <= 0:
+    elif machine.event == "Salad Dressing   5\u00A2":
+        if QSaladDressing <= 0:
             print ("\n OUT OF STOCK\n")
             return "NoStock"  
-        if total >= 125 and Juice_Amount > 0:
-            Juice_Amount -= 1
-            total -= 125
+        if total >= 5 and QSaladDressing > 0:
+            QSaladDressing -= 1
+            total -= 5
         return total
     
     
     
 # finish check and direct next steps
 class ItemState(State):
-    _NAME = "deliver_product"
+    _NAME = "item"
     def on_entry(self, machine):
         StockStatus = StorageCheck(machine.event, machine.total)
         if machine.total == "NoStock":
             machine.go_to_state('waiting')
-        if machine.total != Snack and isinstance(Snack, int):
-            machine.total = Snack
+        if machine.total != StockStatus and isinstance(StockStatus, int):
+            machine.total = StockStatus
             machine.go_to_state ("delivery")  
-        # Deliver the product and change state
-        machine.change_due = machine.amount - machine.PRODUCTS[machine.event][1]
-        machine.amount = 0
-        print("Buzz... Whir... Click...", machine.PRODUCTS[machine.event][0])
-        if machine.change_due > 0:
-            machine.go_to_state('count_change')
         else:
-            print(Snack)
+            print(Selection)
             print("\nInsufficient Funds", machine.total, "\u00A2")
             machine.go_to_state ("waiting")
 
 # Deliver Items
 class DeliveryState(State):
-    _NAME = "dispensing"
+    _NAME = "delivery"
     def on_entry(self, machine):    
         print("Item Delivered!")
         time.sleep(0.2)
-        print("Balance is: ", total)
+        print("Balance is: ", machine.total)
         time.sleep(0.4)
         machine.go_to_state ("waiting")
 
-
+class ReturnState(State):
+    _NAME = "return"
+    
 # MAIN PROGRAM
 if __name__ == "__main__":
     #define the GUI
@@ -288,13 +280,14 @@ if __name__ == "__main__":
     vending.add_state(WaitingState())
     vending.add_state(ItemState())
     vending.add_state(DeliveryState())
+    vending.add_state(ReturnState())
     # Reset state is "waiting for coins"
     vending.go_to_state('waiting')
 
    # Checks if being used on Pi
     if hardware_present:
         # Set up the hardware button callback (do not use () after function!)
-        key1.when_pressed = vending.button_action
+        button.when_pressed = vending.button_action
 
     # The Event Loop: begin continuous processing of events
     # The window.read() function reads events and values from the GUI.
@@ -303,14 +296,15 @@ if __name__ == "__main__":
     # Now that all the states have been defined this is the
     # main portion of the main program.
     while True:
+        button.when_pressed = serv_op
         event, values = window.read(timeout=10)
-        if event != '__TIMEOUT__':
-            log((event, values))
-            pass
-        if event in (sg.WIN_CLOSED, 'Exit'):
+        if event == "__TIMEOUT__":
+            pass  # no user interaction event occurred
+        elif event == sg.WIN_CLOSED:
+            print("Event sg.WIN_CLOSED")
             break
-        vending.event = event
-        vending.update()
+        else:
+            print("Event", event)
 
     window.close()
-    print("Normal exit")
+    print("Exiting...")
