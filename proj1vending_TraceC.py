@@ -24,6 +24,39 @@ import PySimpleGUI as sg
 from gpiozero import Button, Servo
 from time import sleep
 
+#quantities
+QTomatoSoup = 3
+QRaspberryStew = 1
+QCanOpener = 1
+QSaladDressing = 2
+#Check Stock
+def CheckStock(Selection):
+    global QTomatoSoup, QRaspberryStew, QCanOpener, QSaladDressing
+    if Selection == "Raspberry Stew":
+        if QRaspberryStew >= 1:
+            print("Buzz... Whir... Click...", Selection)
+            QRaspberryStew = QRaspberryStew - 1
+        else:
+            print("Out of Stock")
+    elif Selection == "Can Opener":
+        if QCanOpener > 0:
+            print("Buzz... Whir... Click...", Selection)
+            QCanOpener = QCanOpener - 1
+        else:
+            print("Out of Stock")
+    elif Selection == "Tomato Soup":
+        if QTomatoSoup >= 1:
+            print("Buzz... Whir... Click...", Selection)
+            QTomatoSoup = QTomatoSoup - 1
+        else:
+            print("Out of Stock")
+    elif Selection == "Salad Dressing":
+        if QSaladDressing >= 1:
+            print("Buzz... Whir... Click...", Selection)
+            QSaladDressing = QSaladDressing - 1
+        else:
+            print("Out of Stock")
+    return()
 
 # Hardware interface module
 # Button basic recipe: *** define the pin you used
@@ -161,11 +194,16 @@ class AddCoinsState(State):
 # Print the product being delivered
 class DeliverProductState(State):
     _NAME = "deliver_product"
+
     def on_entry(self, machine):
         # Deliver the product and change state
         machine.change_due = machine.amount - machine.PRODUCTS[machine.event][1]
         machine.amount = 0
-        print("Buzz... Whir... Click...", machine.PRODUCTS[machine.event][0])
+        #Checks Stock
+        Selection = machine.PRODUCTS[machine.event][0]
+        print(Selection)
+        CheckStock(Selection)
+        # End of Stock Check 
         if machine.change_due > 0:
             machine.go_to_state('count_change')
         else:
