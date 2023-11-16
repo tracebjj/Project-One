@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     coin_col = []
     coin_col.append([sg.Text("ENTER COINS", font=("Helvetica", 24))])
-    for item in VendingMachine.COINS:
+    for item, _ in VendingMachine.COINS:
         log(item)
         button = sg.Button(item, font=("Helvetica", 18))
         row = [button]
@@ -260,11 +260,13 @@ if __name__ == "__main__":
 
     select_col = []
     select_col.append([sg.Text("SELECT ITEM", font=("Helvetica", 24))])
-    for item in VendingMachine.PRODUCTS:
+    for item, _ in VendingMachine.PRODUCTS:  # Iterate over the tuples but only use the first element
         log(item)
         button = sg.Button(item, font=("Helvetica", 18))
         row = [button]
         select_col.append(row)
+
+
 
     layout = [ [sg.Column(coin_col, vertical_alignment="TOP"),
                      sg.VSeparator(),
